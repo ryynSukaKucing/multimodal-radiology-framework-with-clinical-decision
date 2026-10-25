@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Radiology System</title>
+<link rel="stylesheet" href="css/style.css?v=25">
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="login-screen">
+    <div class="login-card">
+        <h1>AI Radiology System</h1>
+        <p class="subtitle">Sign in to access the clinical dashboard</p>
+        <div class="field">
+            <label>Username</label>
+            <input type="text" id="login-username" placeholder="admin" autocomplete="username">
+        </div>
+        <div class="field">
+            <label>Password</label>
+            <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button type="button" class="btn-primary" id="btn-login" style="width:100%;">Sign In</button>
+        <div class="login-error" id="login-error"></div>
+        <div class="hint-box">Default account: <strong>admin / admin123</strong> (see backend/.env)</div>
+    </div>
+</div>
+
+<!-- ===== APP SHELL ===== -->
+<div id="app-shell">
+<div class="shell-grid">
+    <aside class="sidebar">
+        <div class="sidebar-brand">Radiology<span>AI</span></div>
+
+        <div class="sidebar-box">
+            <label class="sidebar-box-label">Patient Name</label>
+            <select id="patient-select"><option value="">No patient (optional)</option></select>
+        </div>
+
+        <div class="nav-item active" data-view="dashboard">Dashboard</div>
+        <div class="nav-item" data-view="patients">Patient Database</div>
+        <div class="nav-item" data-view="clinical-history">Clinical History</div>
+        <div class="nav-item" data-view="history">Scan History</div>
+        <div class="nav-item" data-view="scan">AI Scan</div>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-box sidebar-ai-box">
+                <label class="sidebar-box-label">AI Model</label>
+                <select id="model-select">
+                    <optgroup label="Free (oc/)">
+                        <option value="oc/big-pickle">oc/big-pickle</option>
+                        <option value="oc/nemotron-3-ultra-free">oc/nemotron-3-ultra-free</option>
+                        <option value="oc/nemotron-3.5-lightning-free">oc/nemotron-3.5-lightning-free</option>
+                        <option value="oc/longcat-2.5-preview-free">oc/longcat-2.5-preview-free</option>
+                        <option value="oc/space-bunny-free">oc/space-bunny-free</option>
+                        <option value="oc/nemotron-3.5-super-vl-free">oc/nemotron-3.5-super-vl-free</option>
+                        <option value="oc/mimo-v2.6-flash-free">oc/mimo-v2.6-flash-free</option>
+                        <option value="oc/beam-free">oc/beam-free</option>
+                        <option value="oc/deepseek-v4.1-flash-free">oc/deepseek-v4.1-flash-free</option>
+                        <option value="oc/glm-5.3-flash-free">oc/glm-5.3-flash-free</option>
+                        <option value="oc/muse-spark-1.2-contributor-free">oc/muse-spark-1.2-contributor-free</option>
+                        <option value="oc/muse-spark-1.3-contributor-free">oc/muse-spark-1.3-contributor-free</option>
+                    </optgroup>
+                    <optgroup label="Premium Router (kr/)">
+                        <option value="kr/claude-sonnet-4.5" selected>kr/claude-sonnet-4.5</option>
+                        <option value="kr/claude-haiku-4.5">kr/claude-haiku-4.5</option>
+                        <option value="kr/deepseek-3.2">kr/deepseek-3.2</option>
+                        <option value="kr/qwen3-coder-next">kr/qwen3-coder-next</option>
+                        <option value="kr/glm-5">kr/glm-5</option>
+                        <option value="kr/claude-sonnet-4.5-thinking">kr/claude-sonnet-4.5-thinking</option>
+                        <option value="kr/claude-haiku-4.5-thinking">kr/claude-haiku-4.5-thinking</option>
+                    </optgroup>
+                    <optgroup label="Gemini (gemini/)">
+                        <option value="gemini/gemini-3.8-flash">gemini/gemini-3.8-flash</option>
+                        <option value="gemini/gemini-3.7-flash">gemini/gemini-3.7-flash</option>
+                        <option value="gemini/gemini-3.6-flash">gemini/gemini-3.6-flash</option>
+                        <option value="gemini/gemini-3.5-flash-lite">gemini/gemini-3.5-flash-lite</option>
+                        <option value="gemini/gemini-3.1-pro-preview">gemini/gemini-3.1-pro-preview</option>
+                        <option value="gemini/gemini-3.1-flash-lite-preview">gemini/gemini-3.1-flash-lite-preview</option>
+                        <option value="gemini/gemini-3-flash-preview">gemini/gemini-3-flash-preview</option>
+                    </optgroup>
+                </select>
+                <div class="sidebar-box scan-log-box">
+                    <div class="scan-log-head">
+                        <label class="sidebar-box-label" for="scan-log">Process Log</label>
+                        <button type="button" id="btn-clear-log" class="log-clear" title="Clear log">Clear</button>
+                    </div>
+                    <div id="scan-log" class="scan-log" role="log" aria-live="polite"><div class="log-empty">No activity yet. The log appears when a scan starts.</div></div>
+                </div>
+                <div class="sidebar-box sidebar-api-box">
+                    <label class="sidebar-box-label">API</label>
+                    <input type="password" id="api-key" placeholder="API Key 9Router">
+                </div>
+            </div>
+            <div class="user-chip"><strong id="me-fullname">-</strong><span id="me-role">-</span></div>
+            <button type="button" class="btn-logout" id="btn-logout">Sign Out</button>
+        </div>
+    </aside>
+
+    <main class="main-area">
+
+        <!-- ===== DASHBOARD VIEW ===== -->
+        <section class="view active" id="view-dashboard">
+            <div class="page-header">
+                <div>
+                    <h2>Dashboard</h2>
+                    <p>Summary of clinical activity and AI scans</p>
+                </div>
+                <button type="button" class="btn-secondary btn-sm" id="btn-refresh-dashboard">Refresh</button>
+            </div>
+
+            <div class="stat-grid">
+                <div class="stat-card"><div class="stat-label">Total Patients</div><div class="stat-value" id="stat-patients">-</div></div>
+                <div class="stat-card"><div class="stat-label">Total Scans</div><div class="stat-value" id="stat-scans">-</div></div>
+                <div class="stat-card"><div class="stat-label">Scans Today</div><div class="stat-value" id="stat-today">-</div></div>
+                <div class="stat-card"><div class="stat-label">Success Rate</div><div class="stat-value" id="stat-success">-</div></div>
+            </div>
+
+            <div class="dash-grid">
+                <div class="panel">
+                    <div class="trend-head">
+                        <h3>Scan Trend (Per Day) <span class="trend-total" id="trend-total"></span></h3>
+                        <div class="trend-nav">
+                            <button type="button" class="btn-secondary btn-sm" id="trend-prev" title="Previous day">&lsaquo;</button>
+                            <input type="date" id="trend-date" aria-label="Choose day">
+                            <button type="button" class="btn-secondary btn-sm" id="trend-next" title="Next day">&rsaquo;</button>
+                            <button type="button" class="btn-secondary btn-sm" id="trend-today">Today</button>
+                        </div>
+                    </div>
+                    <div class="bar-chart" id="bar-chart"></div>
+                </div>
+                <div class="panel">
+                    <h3>Severity Distribution</h3>
+                    <div id="severity-breakdown"></div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top:18px;">
+                <h3>Recent Activity</h3>
+                <div class="recent-list" id="recent-list"></div>
+            </div>
+        </section>
+
+        <!-- ===== PATIENTS VIEW ===== -->
+        <section class="view" id="view-patients">
+            <div class="page-header">
+                <div>
+                    <h2>Patient Database</h2>
+                    <p>Manage patient records: add, edit, or delete</p>
+                </div>
+                <button type="button" class="btn-primary" id="btn-add-patient">+ Add Patient</button>
+            </div>
+            <div class="toolbar">
+                <input type="text" id="patient-search" placeholder="Search by name or MRN...">
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th>MRN</th><th>Name</th><th>Gender</th><th>Date of Birth</th><th>Phone</th><th>Scans</th><th>Actions</th>
+                    </tr></thead>
+                    <tbody id="patients-tbody"></tbody>
+                </table>
+                <div class="empty-state" id="patients-empty" style="display:none;">No patient records yet.</div>
+            </div>
+        </section>
+
+        <!-- ===== CLINICAL HISTORY VIEW ===== -->
+        <section class="view" id="view-clinical-history">
+            <div class="page-header">
+                <div>
+                    <h2>Clinical History</h2>
+                    <p>Patient clinical data used as extra context for AI Scan and the findings option map. Select the patient in the sidebar (Patient Name).</p>
+                </div>
+            </div>
+
+            <!-- Text history (six categories). Patient is selected from the sidebar. -->
+            <div id="ch-tab-text">
+                <div class="scan-config-row">
+                    <input type="file" id="ch-file-input" multiple hidden accept=".txt,.md,.pdf,.docx">
+                    <button type="button" class="btn-secondary" id="btn-ch-upload">Upload Files</button>
+                    <button type="button" class="btn-primary" id="btn-ch-ai-parse" disabled>AI Auto-Split</button>
+                    <span class="status-indicator" id="ch-upload-status"></span>
+                </div>
+                <div class="hint-box" style="margin-bottom:14px;">
+                    Upload documents (anamnesis, medical summary, etc., in .txt/.md/.pdf/.docx format). The AI will automatically split the content
+                    into the six categories below using the same model &amp; API key as on the AI Scan page.
+                </div>
+
+                <div class="ch-grid" id="ch-empty-hint">
+                    <div class="empty-state">Select a patient in the Patient Name box in the sidebar to view or fill in Clinical History.</div>
+                </div>
+
+                <div class="ch-grid" id="ch-form-grid" style="display:none;">
+                    <div class="ch-card">
+                        <h3>Patient Identity</h3>
+                        <textarea id="ch-identitas_pasien" rows="4" placeholder="Name, age, gender, occupation, etc."></textarea>
+                    </div>
+                    <div class="ch-card">
+                        <h3>Chief Complaint</h3>
+                        <textarea id="ch-keluhan_utama" rows="4" placeholder="Chief complaint & history of present illness"></textarea>
+                    </div>
+                    <div class="ch-card">
+                        <h3>Physical Examination</h3>
+                        <textarea id="ch-pemeriksaan_fisik" rows="4" placeholder="Vital signs, physical findings"></textarea>
+                    </div>
+                    <div class="ch-card">
+                        <h3>Supporting Examinations</h3>
+                        <textarea id="ch-pemeriksaan_penunjang" rows="4" placeholder="Lab results, prior radiology, etc."></textarea>
+                    </div>
+                    <div class="ch-card">
+                        <h3>Medical History</h3>
+                        <textarea id="ch-riwayat_medis" rows="4" placeholder="Past illnesses, family history, allergies, medications"></textarea>
+                    </div>
+                    <div class="ch-card">
+                        <h3>Other Notes</h3>
+                        <textarea id="ch-keterangan_lainnya" rows="4" placeholder="Additional information"></textarea>
+                    </div>
+                </div>
+                <div class="upload-controls" id="ch-save-row" style="display:none;">
+                    <button type="button" class="btn-primary" id="btn-ch-save">Save Clinical History</button>
+                </div>
+            </div>
+
+
+            <!-- Structured Clinical Profile -->
+            <div id="ch-profile-wrap" style="margin-top:26px;">
+                <div class="empty-state" id="cp-empty">Select a patient in the Patient Name box in the sidebar to view the Structured Clinical Profile.</div>
+                <div id="cp-body">
+                        <div class="cp-header">
+                            <div class="cp-title-row"><h2>Patient Clinical Profile</h2><span class="cp-idbadge" id="cp-id">ID: -</span></div>
+                            <p class="cp-subtitle" id="cp-subtitle">Multi-Diagnosis Evaluation Panel | Integrated Medical Record and Radiology Evaluation</p>
+                        </div>
+                        <div class="cp-searchbar">
+                            <div class="cp-searchbox"><span class="cp-searchicon">[Q]</span><input type="search" id="cp-search" placeholder="Search diagnosis / medication..." autocomplete="off"></div>
+                            <select id="cp-cat" title="Display category">
+                                <option value="all">All Diagnoses</option>
+                                <option value="utama">Primary Diagnosis</option>
+                                <option value="kritis">Critical Comorbidities</option>
+                                <option value="kronis">Chronic Comorbidities</option>
+                                <option value="akut">Acute / Malignant</option>
+                            </select>
+                            <button type="button" class="btn-secondary" id="cp-btn-pdf">Export PDF</button>
+                            <button type="button" class="btn-primary" id="cp-btn-add">+ Add Diagnosis</button>
+                        </div>
+                        <div class="cp-toolbar">
+                            <label class="cp-tool-label">Diagnosis code system
+                                <select id="cp-code-system"></select>
+                            </label>
+                            <button type="button" class="btn-primary btn-sm" id="cp-btn-ai">AI Build Clinical Profile</button>
+                            <button type="button" class="btn-secondary btn-sm" id="cp-btn-ai-codes">AI Fill Codes</button>
+                            <button type="button" class="btn-secondary btn-sm" id="cp-btn-save">Save Profile</button>
+                            <span class="status-indicator" id="cp-status"></span>
+                        </div>
+                        <div class="hint-box cp-hint">
+                            The profile is built from the Text History and the patient's scan results. Diagnosis codes from the AI or the local list are suggestions only:
+                            the code format is checked automatically, but the code's existence must be verified against the official release (WHO ICD, SNOMED, PPNI, NANDA-I).
+                        </div>
+    
+                        <section class="cp-panel" id="cp-sec-cards">
+                            <div class="cp-panel-head">
+                                <h3>1. Summary of Active Diagnoses and Comorbidities</h3>
+                                <div class="cp-head-actions" style="position:relative;">
+                                    <button type="button" class="btn-secondary btn-sm" id="cp-btn-filter">Filter Grid</button>
+                                    <div class="cp-popover" id="cp-filter-pop"></div>
+                                    <button type="button" class="btn-secondary btn-sm" id="cp-btn-priority">Set Priority</button>
+                                </div>
+                            </div>
+                            <div class="cp-cards" id="cp-cards"></div>
+                        </section>
+    
+                        <section class="cp-panel" id="cp-sec-matrix">
+                            <div class="cp-panel-head">
+                                <h3>2. Classification Matrix and Impact Assessment</h3>
+                                <div class="cp-head-actions">
+                                    <button type="button" class="btn-secondary btn-sm" id="cp-btn-sort">Sort by Risk</button>
+                                    <button type="button" class="btn-secondary btn-sm" id="cp-btn-print">Print Matrix</button>
+                                </div>
+                            </div>
+                            <div class="cp-table-wrap"><table class="cp-table" id="cp-matrix"></table></div>
+                        </section>
+    
+                        <div class="cp-two">
+                            <section class="cp-panel" id="cp-sec-scores">
+                                <div class="cp-panel-head">
+                                    <h3>3. Aggregate Scores and Indicators</h3>
+                                    <div class="cp-head-actions">
+                                        <button type="button" class="btn-secondary btn-sm" id="cp-btn-recalc">Recalculate</button>
+                                    </div>
+                                </div>
+                                <div id="cp-scores"></div>
+                            </section>
+                            <section class="cp-panel cp-panel-danger" id="cp-sec-hazards">
+                                <div class="cp-panel-head">
+                                    <h3>4. Clinical Hazards Matrix</h3>
+                                    <div class="cp-head-actions">
+                                        <button type="button" class="btn-secondary btn-sm" id="cp-btn-addhz">+ Hazard</button>
+                                        <button type="button" class="btn-danger-outline btn-sm" id="cp-btn-override">Override Alert</button>
+                                    </div>
+                                </div>
+                                <div id="cp-hazards"></div>
+                            </section>
+                        </div>
+    
+                        <section class="cp-panel" id="cp-sec-organ">
+                            <div class="cp-panel-head">
+                                <h3>5. Organ Capacity and Baseline Functional Status</h3>
+                                <div class="cp-head-actions">
+                                    <button type="button" class="btn-secondary btn-sm" id="cp-btn-lab">Update Lab Results</button>
+                                </div>
+                            </div>
+                            <div class="cp-organ" id="cp-organ"></div>
+                            <div class="cp-note" id="cp-organ-note"></div>
+                        </section>
+                    </div>
+            </div>
+
+        </section>
+
+        <!-- ===== HISTORY VIEW ===== -->
+        <section class="view" id="view-history">
+            <div class="page-header">
+                <div>
+                    <h2>Scan History</h2>
+                    <p>All saved medical image analysis results</p>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th>Date</th><th>Patient</th><th>File</th><th>Diagnosis</th><th>Status</th><th>Actions</th>
+                    </tr></thead>
+                    <tbody id="history-tbody"></tbody>
+                </table>
+                <div class="empty-state" id="history-empty" style="display:none;">No scan history yet.</div>
+            </div>
+        </section>
+
+        <!-- ===== SCAN VIEW ===== -->
+        <section class="view" id="view-scan">
+            <div class="page-header">
+                <div>
+                    <h2>AI Scan</h2>
+                    <p>Choose the imaging type, scan object, and diagnosis code, then upload a medical image (X-Ray, CT-Scan, MRI, DICOM)</p>
+                </div>
+            </div>
+
+            <!-- Toolbar icon sprite -->
+            <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+                <defs>
+                    <symbol id="i-zoom-in" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M10.5 7.5v6M7.5 10.5h6"/></symbol>
+                    <symbol id="i-zoom-out" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M7.5 10.5h6"/></symbol>
+                    <symbol id="i-erase" viewBox="0 0 24 24"><path d="M3 17l9-9 6 6-6 6H6z"/><path d="M9 20h12"/></symbol>
+                    <symbol id="i-draw" viewBox="0 0 24 24"><path d="M4 20l1-4L17 4l3 3L8 19z"/><path d="M14 7l3 3"/></symbol>
+                    <symbol id="i-select" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" stroke-dasharray="3 3"/></symbol>
+                    <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v5h-5"/></symbol>
+                    <symbol id="i-measure" viewBox="0 0 24 24"><path d="M3 20h18M3 20L15 5"/><path d="M9 20a6 6 0 0 0-1.8-4.2"/></symbol>
+                    <symbol id="i-crop" viewBox="0 0 24 24"><path d="M7 3v14h14M3 7h14v14"/></symbol>
+                    <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v5h5"/></symbol>
+                    <symbol id="i-note" viewBox="0 0 24 24"><path d="M5 4h14v11l-5 5H5z"/><path d="M14 20v-5h5"/></symbol>
+                    <symbol id="i-layout" viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="5"/><rect x="9.5" y="3" width="5" height="5"/><rect x="16" y="3" width="5" height="5"/><rect x="3" y="9.5" width="5" height="5"/><rect x="9.5" y="9.5" width="5" height="5"/><rect x="16" y="9.5" width="5" height="5"/><rect x="3" y="16" width="5" height="5"/><rect x="9.5" y="16" width="5" height="5"/><rect x="16" y="16" width="5" height="5"/></symbol>
+                    <symbol id="i-layer" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 17l9 5 9-5"/></symbol>
+                    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+                    <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6"/><rect x="4" y="9" width="16" height="8" rx="1"/><path d="M7 14h10v7H7z"/></symbol>
+                    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></symbol>
+                </defs>
+            </svg>
+
+            <!-- Scan settings (chosen BEFORE starting): imaging type, scan object, diagnosis code -->
+            <div class="scan-setup" id="scan-setup">
+                <div class="ss-field">
+                    <label class="ss-label" for="jenis-pemeriksaan-select">1. Imaging Type</label>
+                    <select id="jenis-pemeriksaan-select" title="Imaging type being examined">
+                        <option value="X-Ray" selected>X-Ray</option>
+                        <option value="CT-Scan">CT Scan</option>
+                        <option value="MRI">MRI</option>
+                        <option value="USG">USG</option>
+                        <option value="PET scan">PET Scan</option>
+                    </select>
+                </div>
+                <div class="ss-field ss-target">
+                    <span class="ss-label">2. Scan Object</span>
+                    <div class="ss-seg" id="scan-target-seg" role="radiogroup" aria-label="Scan object">
+                        <label class="ss-opt"><input type="radio" name="scan-target" value="anatomi"><span><b>Anatomy</b><small>organ detection + segmentation</small></span></label>
+                        <label class="ss-opt"><input type="radio" name="scan-target" value="lesi"><span><b>Lesions</b><small>detection + severity heatmap</small></span></label>
+                        <label class="ss-opt"><input type="radio" name="scan-target" value="anatomi_lesi" checked><span><b>Anatomy + Lesions</b><small>both at once</small></span></label>
+                    </div>
+                </div>
+                <div class="ss-field">
+                    <label class="ss-label" for="diagnosis-code-system-select">3. Diagnosis Code</label>
+                    <select id="diagnosis-code-system-select" title="Preferred diagnosis code system">
+                        <option value="auto">Auto (chosen by AI)</option>
+                        <option value="icd10">ICD-10</option>
+                        <option value="icd11">ICD-11</option>
+                        <option value="snomed">SNOMED CT</option>
+                        <option value="sdki">SDKI</option>
+                        <option value="nanda">NANDA-I</option>
+                    </select>
+                </div>
+                <div class="ss-note" id="scan-target-note"></div>
+            </div>
+
+            <!-- Hidden selects (used by runBatchScan) -->
+            <div hidden>
+                <select id="anatomical-area-select">
+                    <option value="">-</option><option value="Brain & Head-Neck">Brain & Head-Neck</option>
+                    <option value="Thorax / Chest">Thorax / Chest</option>
+                    <option value="Abdomen & Pelvis">Abdomen & Pelvis</option>
+                    <option value="Musculoskeletal">Musculoskeletal</option>
+                    <option value="Breast">Breast</option>
+                    <option value="Cardiovascular">Cardiovascular</option>
+                    <option value="Lainnya">Other</option>
+                </select>
+                <select id="tujuan-analisis-select">
+                    <option value="otomatis">Automatic</option><option value="screening">Screening & Detection</option>
+                    <option value="segmentation">Segmentation & Quantitative Analysis</option>
+                    <option value="classification">Classification & Grading</option>
+                    <option value="therapeutics">Therapeutics & Decision Support</option>
+                    <option value="prognostics">Prognostics & Longitudinal</option>
+                </select>
+                <input type="file" id="file-input" accept=".png,.jpg,.jpeg,.dcm" multiple>
+            </div>
+
+            <div class="scan-layout">
+                <div class="rv-workspace">
+                    <!-- Layout: left column (buttons + photos) | right (top bar + viewer). Row 2 is equal height & fixed. -->
+                    <div class="rv-frame">
+                        <div class="rv-file-actions">
+                            <div class="rv-scan-split dropdown">
+                                <button type="button" id="btn-scan" class="rv-scan-btn" disabled><span>Start Scan</span><small id="scan-mode-label">All frames</small></button>
+                                <button type="button" id="btn-scan-mode" class="rv-scan-caret dropdown-toggle" disabled title="Choose: scan all frames or a single frame" aria-label="Scan mode">&#9662;</button>
+                                <div class="dropdown-panel menu-dark" id="scan-mode-menu"></div>
+                            </div>
+                            <button type="button" id="btn-segment" class="rv-seg-btn" disabled title="Call 2 of 2: draw contours for the detected objects"><span>Segmentation</span><small id="segment-label">Run detection first</small></button>
+                            <button type="button" id="btn-upload">Upload File</button>
+                            <button type="button" id="btn-print">Print Scan</button>
+                        </div>
+
+                        <div class="rv-topbar">
+                            <div class="tool-grid">
+                                <div class="tool-cell dropdown"><button type="button" class="tool-btn dropdown-toggle" data-tool="select" title="Select"><span>Select</span></button>
+                                    <div class="dropdown-panel menu-dark" id="menu-select"></div></div>
+                                <div class="tool-cell dropdown"><button type="button" class="tool-btn dropdown-toggle" title="Layout"><svg class="ic"><use href="#i-layout"/></svg><span>Layout</span></button>
+                                    <div class="dropdown-panel"><div class="layout-type-list opt-list" id="layout-type-list"></div></div></div>
+                                <div class="tool-cell"><button type="button" class="tool-btn" id="btn-zoom-out" title="Zoom out"><span>Zoom out</span></button></div>
+                                <div class="tool-cell dropdown"><button type="button" class="tool-btn dropdown-toggle" data-tool="erase" title="Erase (remove Draw strokes)"><span>Erase</span></button>
+                                    <div class="dropdown-panel menu-dark"><div class="dd-item" data-act="erase-all">Clear all strokes</div></div></div>
+                                <div class="tool-cell dropdown"><button type="button" class="tool-btn dropdown-toggle" id="btn-rotate" title="Rotate"><span>Rotate</span></button>
+                                    <div class="dropdown-panel menu-dark dd-right" id="menu-rotate"></div></div>
+                                <div class="tool-cell dropdown"><button type="button" class="tool-btn dropdown-toggle tool-small" data-tool="measure" title="Measurement"><span>Measurement</span></button>
+                                    <div class="dropdown-panel menu-dark menu-scroll dd-right" id="menu-measure"></div></div>
+                                <div class="tool-cell tool-span2 dropdown"><button type="button" class="tool-btn dropdown-toggle" title="Image Setting"><span>Image Setting</span></button>
+                                    <div class="dropdown-panel menu-dark dd-right" id="menu-image-setting"></div></div>
+
+                                <div class="tool-cell"><button type="button" class="tool-btn" id="btn-view-reset" title="Reset view"><span>Reset</span></button></div>
+                                <div class="tool-cell dropdown"><button type="button" class="tool-btn dropdown-toggle" title="Layer"><svg class="ic"><use href="#i-layer"/></svg><span>Layer</span></button>
+                                    <div class="dropdown-panel menu-dark" id="menu-layer"></div></div>
+                                <div class="tool-cell"><button type="button" class="tool-btn" id="btn-zoom-in" title="Zoom in"><span>Zoom in</span></button></div>
+                                <div class="tool-cell dropdown"><button type="button" class="tool-btn dropdown-toggle" data-tool="draw" title="Draw (freehand)"><span>Draw</span></button>
+                                    <div class="dropdown-panel menu-dark" id="menu-draw"></div></div>
+                                <div class="tool-cell"><button type="button" class="tool-btn" data-tool="note" title="Text (click the image to add text)"><span>Text</span></button></div>
+                                <div class="tool-cell"><button type="button" class="tool-btn tool-small" data-tool="crop" title="Crop (drag the area to keep)"><span>Crop</span></button></div>
+                            </div>
+                        </div>
+
+                        <div class="rv-thumbs" id="frame-thumb-list"></div>
+                        <div class="rv-viewer tool-none" id="rv-viewer">
+                            <div class="frame-grid" id="frame-grid"></div>
+                            <div class="rv-pager" id="rv-pager" style="display:none;"></div>
+
+                            <!-- Scan Result Option Map: shown inside the viewer area (same page) -->
+                            <div class="im-panel" id="insight-modal">
+                                <div class="im-head">
+                                    <div class="im-kicker">Scan Result Option Map</div>
+                                    <h3 id="im-title">-</h3>
+                                    <div class="im-sub" id="im-sub"></div>
+                                </div>
+                                <div class="im-head-actions">
+                                    <button type="button" class="btn-secondary btn-sm" id="im-btn-all">Analyze All Branches</button>
+                                    <button type="button" class="btn-secondary btn-sm" id="im-btn-close">Close</button>
+                                </div>
+                                <div class="im-progress" id="im-progress"></div>
+                                <div class="im-map" id="im-map"></div>
+                                <aside class="im-detail" id="im-detail"></aside>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rv-foot">
+                        <span id="status-indicator" class="status-indicator">Status: Waiting for File</span>
+                    </div>
+                    <div class="rv-hint" id="rv-hint"></div>
+                </div>
+
+                <div class="scan-right-panel">
+                    <div class="results-card">
+                        <h3>AI Diagnosis Results <span id="results-frame-tag" style="color:var(--text-secondary);font-weight:400;font-size:.8rem;"></span></h3>
+                        <div id="results-content" class="results-content" style="display:none;">
+                            <div class="diagnosis-box">
+                                <span class="label">Primary Diagnosis:</span>
+                                <div id="diag-title" class="diag-title" contenteditable="true">-</div>
+                                <div id="diag-code" class="status-indicator" style="color:var(--accent-blue);"></div>
+                            </div>
+                            <div class="diagnosis-box" id="diag-alt-box">
+                                <span class="label">Alternative Diagnosis:</span>
+                                <div id="diag-alt-content" class="diag-alt-content">-</div>
+                            </div>
+                            <div class="anomalies-box" id="temuan-box">
+                                <span class="label">Findings:</span>
+                                <div id="temuan-chips" class="temuan-chips"></div>
+                            </div>
+                            <div class="summary-box">
+                                <span class="label">Findings Summary:</span>
+                                <p id="diag-summary" contenteditable="true">-</p>
+                            </div>
+                            <div class="anomalies-box">
+                                <span class="label">Detected Abnormality Details (editable):</span>
+                                <ul id="anomalies-list" class="anomalies-list"></ul>
+                            </div>
+                            <div class="anomalies-box" id="extra-fields-box" style="display:none;">
+                                <span class="label" id="extra-fields-label">Analysis Purpose Implications:</span>
+                                <div id="extra-fields-content" style="font-size:0.85rem;"></div>
+                            </div>
+                            <div class="results-actions">
+                                <button type="button" class="btn-secondary btn-sm" id="btn-save-edit">Save Changes</button>
+                                <button type="button" class="btn-secondary btn-sm" id="btn-open-insight" title="Open the analysis option map for the first finding">Findings Option Map</button>
+                                <button type="button" class="btn-secondary btn-sm" id="btn-add-to-profile" title="Add this diagnosis and its code to the patient's Clinical Profile">Add to Clinical Profile</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+    </main>
+</div>
+</div>
+
+<!-- ===== MODAL: Add/Edit Patient ===== -->
+<div class="modal-backdrop" id="patient-modal">
+    <div class="modal-box">
+        <h3 id="patient-modal-title">Add Patient</h3>
+        <input type="hidden" id="patient-id">
+        <div class="field-row">
+            <div class="field"><label>Medical Record No. (MRN)*</label><input type="text" id="patient-mrn"></div>
+            <div class="field"><label>Full Name*</label><input type="text" id="patient-name"></div>
+        </div>
+        <div class="field-row">
+            <div class="field"><label>Gender</label>
+                <select id="patient-gender"><option value="">-</option><option value="L">Male</option><option value="P">Female</option></select>
+            </div>
+            <div class="field"><label>Date of Birth</label><input type="date" id="patient-birthdate"></div>
+        </div>
+        <div class="field"><label>Phone Number</label><input type="text" id="patient-phone"></div>
+        <div class="field"><label>Address</label><textarea id="patient-address" rows="2"></textarea></div>
+        <div class="field"><label>Clinical Notes</label><textarea id="patient-notes" rows="2"></textarea></div>
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="btn-cancel-patient">Cancel</button>
+            <button type="button" class="btn-primary" id="btn-save-patient">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL: History Detail ===== -->
+<div class="modal-backdrop" id="history-modal">
+    <div class="modal-box" style="max-width:600px;">
+        <h3>Scan History Details</h3>
+        <div id="history-detail-body"></div>
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="btn-close-history">Close</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/api.js?v=25"></script>
+<script src="js/log.js?v=25"></script>
+<script src="js/app.js?v=25"></script>
+<script src="js/dashboard.js?v=25"></script>
+<script src="js/patients.js?v=25"></script>
+<script src="js/history.js?v=25"></script>
+<script src="js/clinical-history.js?v=25"></script>
+<script src="js/scan.js?v=25"></script>
+<script src="js/viewer.js?v=25"></script>
+<script src="js/scan-config.js?v=25"></script>
+<script src="js/insight.js?v=25"></script>
+<script src="js/clinical-profile.js?v=25"></script>
+</body>
+</html>

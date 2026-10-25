@@ -1,0 +1,42 @@
+# ==========================================================
+# FONDASI BACKEND FASTAPI v2 - Sistem Radiologi AI
+# ==========================================================
+
+# --- Kerangka kerja web & server asinkron ---
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+
+# --- Validasi skema data JSON ---
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# --- Database lokal (SQLite) ---
+sqlalchemy==2.0.36
+
+# --- Autentikasi: hashing password & JWT ---
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1  # dipin agar kompatibel dengan Passlib 1.7.4 (versi 4.1+ memicu error deteksi versi)
+python-jose[cryptography]==3.3.0
+
+# --- Pengolahan gambar (termasuk konversi DICOM -> JPEG/PNG) ---
+Pillow==11.0.0
+pydicom==2.4.4
+numpy==2.1.3  # dipin >=2.0 karena pylibjpeg-libjpeg 2.3.0 mensyaratkan numpy>=2.0,<3.0
+
+# --- Plugin dekompresi DICOM (banyak file DICOM asli PACS memakai transfer
+#     syntax terkompresi seperti JPEG Lossless / JPEG2000 / JPEG-LS, yang
+#     TIDAK bisa dibaca pydicom tanpa plugin ini) ---
+pylibjpeg==2.0.1
+pylibjpeg-libjpeg==2.3.0
+pylibjpeg-openjpeg==2.4.0
+
+# --- Upload file multipart & request API eksternal (router AI) ---
+python-multipart==0.0.19
+httpx==0.27.2
+
+# --- Konfigurasi dari file .env ---
+python-dotenv==1.0.1
+
+# --- Ekstraksi teks dokumen untuk Clinical History (AI auto-split) - opsional ---
+pypdf==5.1.0
+python-docx==1.1.2
